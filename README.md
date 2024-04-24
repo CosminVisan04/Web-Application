@@ -1,8 +1,6 @@
-# Deadlines
+# Instructions
 
-    D2: 08.12.2023
-    D3: 19.12.2023
-    D4: 10.01.2024
+Upon cloning the repository, you need to run `docker compose up`. And a server will start on `localhost:5173`
 
 # Part 1
 
