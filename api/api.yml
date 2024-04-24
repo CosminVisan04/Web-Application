@@ -1,0 +1,443 @@
+openapi: '3.0.2'
+info:
+  title: Data on CO2 and Greenhouse Gas Emissions
+  version: '1.0'
+  description: |
+    The API for Data on CO2 and Greenhouse Gas Emissions.
+
+servers:
+  - url: http://localhost:8080
+    description: Backend server
+
+components:
+  schemas:
+    CountryData:
+      type: object
+      required:
+        - "country_code"
+        - "year"
+        - "population"
+        - "gdp"
+      properties:
+        country_code:
+          type: string
+        country:
+          type: string
+        year:
+          type: integer
+        population:
+          type: number
+          format: double
+        gdp:
+          type: number
+          format: double
+    
+    EmissionsData:
+      type: object
+      required:
+        - "country_code"
+        - "year"
+      properties:
+        country_code:
+          type: string
+        year:
+          type: integer
+        co2:
+          type: number
+          format: double
+        methane:
+          type: number
+          format: double
+        nitrous_oxide:
+          type: number
+          format: double
+        total_ghg:
+          type: number
+          format: double
+
+    TemperatureChangeData:
+      type: object
+      properties:
+        continent:
+          type: string
+        year:
+          type: integer
+        share_of_temperature_change_from_ghg:
+          type: number
+          format: double
+        temperature_change_from_ch4:
+          type: number
+          format: double
+        temperature_change_from_co2:
+          type: number
+          format: double  
+        temperature_change_from_ghg:
+          type: number
+          format: double
+        temperature_change_from_n2o:
+          type: number
+          format: double
+
+    EnergyData:
+      type: object
+      properties:
+        country_code:
+          type: string
+        year:
+          type: integer
+        population:
+          type: integer
+        energy_per_capita:
+          type: number
+          format: double
+        energy_per_gdp:
+          type: number
+          format: double
+
+    ClimateChangeContributionData:
+      type: object
+      properties:
+        country_code:
+          type: string
+        year:
+          type: integer
+        share_of_temperature_change_from_ghg:
+          type: number
+          format: double
+
+  responses:
+    BadRequest:
+      description: Request was not well-formed, see error details
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error-message:
+                type: string
+                description: Error message detailing the problem with the request
+        
+        text/csv:
+          schema:
+            type: string
+            format: binary
+            properties:
+              error-message:
+                type: string
+                description: Error message detailing the problem with the request
+
+    NotFound:
+      description: Resource not found
+
+    NoResults:
+      description: List empty; no results
+
+    ServerError:
+      description: Server error; no results, try again later
+  
+  parameters:
+    country_code:
+      name: country_code
+      in: path
+      required: true
+      description: ISO code of the country.
+      schema:
+        type: string
+
+    year:
+      name: year
+      in: path
+      required: true
+      description: Year from which to retrieve the data.
+      schema:
+        type: number
+        format: integer
+
+    start_year:
+        name: start_year
+        in: query
+        required: false
+        description: Year starting from which to retrive the data.
+        schema:
+          type: integer
+
+    continent:
+      name: continent
+      in: path
+      required: true
+      description: The continent to choose from.
+      schema:
+        type: string
+
+    batch_size:
+      name: batch_size
+      in: query
+      required: true
+      description: The batch size of the retrieved data.
+      schema:
+        type: integer
+        enum:
+          - 10
+          - 20
+          - 50
+          - 100
+
+    number_of_countries:
+      name: number_of_countries
+      in: query
+      required: true
+      description: The number of countries to retrieve data for.
+      schema:
+        type: integer
+        minimum: 1  
+
+    number_of_previous_years:
+      name: number_of_previous_years
+      in: query
+      required: false
+      description: The number of previous years to retrieve data for.
+      schema:
+        type: integer
+        minimum: 1   
+
+    rank_type:
+      name: rank_type
+      in: query
+      required: true
+      description: The order to retrieve data.
+      schema:
+        type: string
+        enum:
+          - "top"
+          - "bottom"
+
+paths:
+  /countries/{country_code}/data/{year}:
+    parameters:
+       - $ref: '#/components/parameters/country_code'
+       - $ref: '#/components/parameters/year'
+
+    get:
+      tags:
+        - Country Data
+      summary: Retrieve country data
+      description: Retrieves the population and GDP for a given country and year.
+      responses:
+        '200':
+          description: Successful retrieval of country data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryData"
+            
+            text/csv:
+                schema:
+                  type: string
+                  format: binary
+                example: "country_code, country, year, population, gdp\nvalue1, value2, value3, value4, value5"
+                  
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref:  "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+    put:
+      tags:
+        - Country Data
+      summary: Update country data.
+      description: Updates the population and GDP data for a given country and year.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryData"
+      responses:
+        '200':
+          description: Country data updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryData"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      tags:
+        - Country Data
+      summary: Delete country data
+      description: Deletes the population and GDP data for a given country and year
+      responses:
+        '204':
+          description: Country data deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /countries:
+    post:
+      tags:
+        - Country Data
+      summary: Create new country data
+      description: Creates a new record for population and GDP data for a country
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryData"
+      responses:
+        '200':
+          description: Country data successfully created
+          content:
+            application/json:
+              schema:
+                type: integer
+                description: ID of newly created country data
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Country data for the specified year already exists
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /countries/{country_code}/emissions:
+    parameters:
+      - $ref: '#/components/parameters/country_code'
+      - $ref: '#/components/parameters/start_year'
+    get:
+      tags:
+        - Emissions Data
+      summary: Retrieve emissions data
+      description: Retrieves emissions data for a given country.
+      responses:
+        '200':
+          description: Successful retrieval of emissions data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmissionsData"
+            
+            text/csv:
+                schema:
+                  type: string
+                  format: binary
+                example: "country_code, year, co2, methane, nitrous_oxide, total_ghg\nvalue1, value2, value3, value4, value5, value6"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref:  "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /continents/{continent}/temperature-change:
+    parameters:
+      - $ref: '#/components/parameters/continent'
+      - $ref: '#/components/parameters/start_year'
+    get:
+      tags:
+        - Temperature Change Data
+      summary: Retrieve temperature changes
+      description: Retrieves temperature changes data for a given continent.
+      responses:
+        '200':
+          description: Successful retrieval of temperature change data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TemperatureChangeData"
+
+            text/csv:
+                schema:
+                  type: string
+                  format: binary
+                example: "continent, year, share_of_temperature_change_from_ghg, temperature_change_from_ch4, temperature_change_from_co2, temperature_change_from_ghg, temperature_change_from_n2o\nvalue1, value2, value3, value4, value5, value6, value7"
+
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref:  "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /countries/{year}/energy-data:
+    parameters:
+      - $ref: '#/components/parameters/year'
+      - $ref: '#/components/parameters/batch_size'
+    get:
+      tags:
+        - Energy Data
+      summary: Retrieve energy data
+      description: Retrieves energy data per capita and per GDP
+      responses:
+        '200':
+          description: Successful retrieval of energy data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyData"
+
+            text/csv:
+                schema:
+                  type: string
+                  format: binary
+                example: "country_code, year, population, energy_per_capita, energy_per_gdp\nvalue1, value2, value3, value4, value5"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref:  "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /climate-change/{year}:
+    parameters:
+      - $ref: '#/components/parameters/year'
+      - $ref: '#/components/parameters/number_of_previous_years'
+      - $ref: '#/components/parameters/number_of_countries'
+      - $ref: '#/components/parameters/rank_type'
+    get:
+      tags:
+        - Contribution Climate Change
+      summary: Retrieve top or bottom N countries based on climate change contribution
+      description: Retrieves the top or bottom N countries based on their share of temperature change from GHG, for a specific year or the past M years.
+      responses:
+        '200':
+          description: Successful retrieval of the contribution data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClimateChangeContributionData"
+            
+            text/csv:
+                schema:
+                  type: string
+                  format: binary
+                example: "country_code, year, share_of_temperature_change_from_ghg\nvalue1, value2, value3"
+
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref:  "#/components/responses/NotFound"
+        '5XX':
+          $ref: '#/components/responses/ServerError'

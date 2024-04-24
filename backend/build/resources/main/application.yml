@@ -1,0 +1,5 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://Cosmin:cosmin8453@cluster0.s3qdgr1.mongodb.net/
+      database: web
